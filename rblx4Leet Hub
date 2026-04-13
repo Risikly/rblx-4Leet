@@ -1,0 +1,2036 @@
+local VirtualInputManager = game:GetService("VirtualInputManager")
+local MarketplaceService = game:GetService("MarketplaceService")
+local UserInputService = game:GetService("UserInputService")
+local TextService = game:GetService("TextService")
+local RunService = game:GetService("RunService")
+local rs = game:GetService("ReplicatedStorage")
+local ws = game:GetService("Workspace")
+local players = game:GetService("Players")
+local player = players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+local character = player.Character or player.CharacterAdded:Wait()
+local gameInfo = MarketplaceService:GetProductInfo(game.PlaceId)
+local cam = workspace.CurrentCamera
+
+local activetab = 0
+
+local padding = 5
+local defaultsize = 16
+local frameSize = Vector2.new(800, 600)
+local selectionSize = Vector2.new(130, 40)
+local selectionSizeMin = 130
+local selectionSizeMax = 200
+local selectionbuttonSize = Vector2.new(selectionSize.X - padding * 2, 40)
+
+local white = Color3.fromRGB(200, 200, 200)
+
+local frametransparency = 0.3
+local childtransparency = 0.25
+local elementtransparency = 0.7
+
+
+local isgameSupported = false
+local supported_games = {
+	9168386959, --100Waves
+	9833771859, --stepforiq
+    8316902627, --Plants vs Brainrots
+    7436755782 --gag
+}
+
+--config
+--general
+--main
+local general_main_noclip_bool = false
+local general_main_noclip_speed = 50
+local general_main_noclip_hotkey = nil
+local general_main_noclip_hotkey_hold = { hold = false }
+local general_main_speed_bool = false
+local general_main_speed_speed = 50
+local general_main_speed_hotkey = nil
+local general_main_speed_hotkey_hold = { hold = false }
+local general_main_jumpheight_bool = false
+local general_main_jumpheight_value = 50
+local general_main_jumpheight_hotkey = nil
+local general_main_jumpheight_hotkey_hold = { hold = false }
+
+--b
+local general_main_autoclicker_bool = false
+local general_main_autoclicker_hotkey = nil
+local general_main_autoclicker_hotkey_hold = { hold = false }
+local general_main_autoclicker_keytoklick = nil
+local general_main_autoclicker_delay = 0
+
+--aimbot
+local general_aimbot_bool = false
+local general_aimbot_hotkey = nil
+local general_aimbot_hotkey_hold = { hold = false }
+local general_aimbot_debug_bool = false
+local general_aimbot_targetselection = "Crosshair"
+local general_aimbot_distance = 0
+local general_aimbot_autoshoot_bool = false
+local general_aimbot_smooth = 0
+
+--visuals
+local general_visuals_box_bool = false
+local general_visuals_box_color = Color3.fromRGB(255, 255, 255)
+local general_visuals_name_bool = false
+local general_visuals_health_bool = false
+local general_visuals_distance_bool = false
+
+--100 waves
+local waves_main_freeze_bool = false
+local waves_main_freeze_distance = 3.5
+
+local waves_aimbot_bool = false
+local waves_aimbot_hotkey = nil
+local waves_aimbot_hotkey_hold = { hold = false }
+local waves_aimbot_debug_bool = false
+local waves_aimbot_distance = 4
+local waves_aimbot_reloadspam = false
+
+local waves_visuals_box_bool = false
+local waves_visuals_box_color = Color3.fromRGB(255, 255, 255)
+local waves_visuals_name_bool = false
+local waves_visuals_health_bool = false
+local waves_visuals_distance_bool = false
+
+--stepforiq
+local stepforiq_main_spamstep_bool = false
+local stepforiq_main_autowin_bool = false
+local stepforiq_main_Duelautowin_bool = false
+
+--plants vs brainrots
+local plantsvsbrainrots_main_autoequip_bool = false
+local plantsvsbrainrots_main_autoequip_delay = 100
+local plantsvsbrainrots_main_autobuy_bool = false
+local plantsvsbrainrots_main_autosell_bool = false
+
+--gag
+local gag_shop_autosell_bool = false
+local gag_shop_autosell_delay = 100
+local gag_shop_autobuy_bool = false
+local gag_shop_autobuy_seeds = {}
+local gag_shop_seeds_all = {}
+
+
+
+for _,id in ipairs(supported_games) do
+    if id == game.GameId then
+        isgameSupported = true
+        break
+    end
+end
+print("gameid = ".. game.GameId .. " supported = " .. tostring(isgameSupported))
+
+local main_a = nil
+local main_b = nil
+local aimbot_a = nil
+local aimbot_b = nil
+local visuals_a = nil
+local visuals_b = nil
+
+
+local waves_main_a = nil
+local waves_main_b = nil
+local waves_aimbot_a = nil
+local waves_aimbot_b = nil
+local waves_visuals_a = nil
+local waves_visuals_b = nil
+local waves_misc_a = nil
+local waves_misc_b = nil
+
+local stepforiq_main_a = nil
+local stepforiq_main_b = nil
+
+local plantsvsbrainrots_main_a = nil
+local plantsvsbrainrots_main_b = nil
+
+local gag_shop_a = nil
+local gag_shop_b = nil
+
+local function updateTabs()
+    main_a.Visible = false
+    main_b.Visible = false
+    aimbot_a.Visible = false
+    aimbot_b.Visible = false
+    visuals_a.Visible = false
+    visuals_b.Visible = false
+
+    if game.GameId == 9168386959 then -- 100 Waves
+        waves_main_a.Visible = false
+        waves_main_b.Visible = false
+        waves_aimbot_a.Visible = false
+        waves_aimbot_b.Visible = false
+        waves_visuals_a.Visible = false
+        waves_visuals_b.Visible = false
+        waves_misc_a.Visible = false
+        waves_misc_b.Visible = false
+    end
+
+    if game.GameId == 9833771859 then -- Step for IQ
+        stepforiq_main_a.Visible = false
+        stepforiq_main_b.Visible = false
+    end
+
+    if game.GameId == 8316902627 then --Plants vs Brainrots
+        plantsvsbrainrots_main_a.Visible = false
+        plantsvsbrainrots_main_b.Visible = false
+    end
+
+    if game.GameId == 7436755782 then --gag
+        gag_shop_a.Visible = false
+        gag_shop_b.Visible = false
+    end
+    
+
+    if activetab == 0 then
+        main_a.Visible = true
+        main_b.Visible = true
+    elseif activetab == 1 then
+        aimbot_a.Visible = true
+        aimbot_b.Visible = true
+    elseif activetab == 2 then
+        visuals_a.Visible = true
+        visuals_b.Visible = true
+    end
+
+    if not isgameSupported then return end
+
+    if game.GameId == 9168386959 then --100 Waves
+        if activetab == 3 then
+            waves_main_a.Visible = true
+            waves_main_b.Visible = true
+        elseif activetab == 4 then
+            waves_aimbot_a.Visible = true
+            waves_aimbot_b.Visible = true
+        elseif activetab == 5 then
+            waves_visuals_a.Visible = true
+            waves_visuals_b.Visible = true
+        elseif activetab == 6 then
+            waves_misc_a.Visible = true
+            waves_misc_b.Visible = true
+        end
+    end    
+
+    if game.GameId == 9833771859 then --stepforiq
+        if activetab == 3 then
+            stepforiq_main_a.Visible = true
+            stepforiq_main_b.Visible = true
+        end
+    end
+
+    if game.GameId == 8316902627 then --Plants vs Brainrots
+        if activetab == 3 then
+            plantsvsbrainrots_main_a.Visible = true
+            plantsvsbrainrots_main_b.Visible = true
+        end
+    end
+
+    if game.GameId == 7436755782 then --gag
+        if activetab == 3 then
+            gag_shop_a.Visible = true
+            gag_shop_b.Visible = true
+        end
+    end
+
+end
+
+
+-- Create GUI
+local gui = Instance.new("ScreenGui")
+gui.Name = "4LeetHub"
+gui.ResetOnSpawn = false
+gui.Parent = game.CoreGui
+
+-- Main Frame
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0, frameSize.X, 0, frameSize.Y)
+frame.Position = UDim2.new(0.5, -frameSize.X/2, 0.5, -frameSize.Y/2)
+frame.BackgroundColor3 = Color3.fromRGB(150, 150, 150)
+frame.BackgroundTransparency = frametransparency
+frame.BorderSizePixel = 1
+frame.BorderColor3 = Color3.fromRGB(255,255,255)
+frame.Visible = true
+frame.Parent = gui
+frame.Active = true
+frame.Draggable = true
+
+local g = Instance.new("UIGradient")
+g.Color = ColorSequence.new(Color3.fromRGB(194, 16, 84), Color3.fromRGB(18, 179, 112))
+g.Rotation = 45
+g.Parent = frame
+
+--UI
+--Label
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(0, selectionSize.X, 0, selectionSize.Y)
+title.Position = UDim2.new(0, padding, 0, padding)
+title.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+title.BackgroundTransparency = childtransparency
+title.Text = "4Leet Hub"
+title.TextColor3 = Color3.new(1,1,1)
+title.TextSize = defaultsize
+title.Font = Enum.Font.SourceSansBold
+title.Parent = frame
+
+-- Close Button (X)
+local closeButton = Instance.new("TextButton")
+closeButton.Size = UDim2.new(0, 25, 0, 30)
+closeButton.Position = UDim2.new(1, -30, 0, 5)
+closeButton.Text = "X"
+closeButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+closeButton.BackgroundTransparency = elementtransparency
+closeButton.TextColor3 = Color3.new(1,0,0)
+closeButton.Font = Enum.Font.SourceSansBold
+closeButton.TextSize = defaultsize
+closeButton.Parent = title
+
+--Secelction Child
+local selectionChild = Instance.new("Frame")
+selectionChild.Size = UDim2.new(0, selectionSize.X, 1, -selectionSize.y * 2 - padding * 4)
+selectionChild.Position = UDim2.new(0, padding, 0, selectionSize.Y + padding * 2) 
+selectionChild.BackgroundColor3 = Color3.fromRGB(30, 30, 30) 
+selectionChild.BackgroundTransparency = childtransparency
+selectionChild.BorderSizePixel = 1
+selectionChild.Parent = frame 
+
+selectionChild.MouseEnter:Connect(function()
+    --expand
+end)
+selectionChild.MouseLeave:Connect(function()
+    --gosmool
+end)
+
+--GameName / id
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(0, selectionSize.X, 0, selectionSize.Y)
+title.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+title.Position = UDim2.new(0, padding, 0, frameSize.Y - selectionSize.Y - padding)
+title.Text = not isgameSupported and game.GameId or gameInfo.Name
+title.TextColor3 = Color3.new(1,1,1)
+title.BackgroundTransparency = childtransparency
+title.TextSize = defaultsize
+title.Font = Enum.Font.SourceSansBold
+title.Parent = frame
+
+
+--selection section
+local selectionT = 0
+local seperatordone = 0
+local function createSelectionButton(text, callback)
+    selectionT += 1
+
+    local pos = Vector2.new(padding, padding * selectionT + seperatordone + selectionSize.Y * (selectionT - 1) )
+
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(0, selectionbuttonSize.X, 0, selectionbuttonSize.Y)
+    btn.Position = UDim2.new(0, pos.X, 0, pos.Y)
+	btn.BackgroundTransparency = elementtransparency
+    btn.Text = text
+	btn.TextColor3 = white
+    btn.Parent = selectionChild
+
+    btn.MouseButton1Click:Connect(function()
+        if callback then
+            callback()
+        end
+    end)
+end
+
+--create tabs
+tabsize = (frameSize.X - padding * 4 - selectionSize.X)/2
+local function createTab_a(text)
+	local tab = Instance.new("Frame")
+	tab.Size = UDim2.new(0, tabsize, 0, frameSize.Y - padding * 2)
+	tab.Position = UDim2.new(0, selectionSize.X + padding * 2, 0, padding)
+	tab.BackgroundColor3 = Color3.fromRGB(30, 30, 30) 
+	tab.BackgroundTransparency = childtransparency
+	tab.BorderSizePixel = 1
+	tab.Parent = frame
+    return tab
+end
+local function createTab_b(text)
+	local tab = Instance.new("Frame")
+	tab.Size = UDim2.new(0, tabsize, 0, frameSize.Y - padding * 2)
+	tab.Position = UDim2.new(1, -tabsize - padding, 0, padding)
+	tab.BackgroundColor3 = Color3.fromRGB(30, 30, 30) 
+	tab.BackgroundTransparency = childtransparency
+	tab.BorderSizePixel = 1
+	tab.Parent = frame
+    return tab
+end
+
+--Buttons
+createSelectionButton("Main", function()
+    activetab = 0
+    updateTabs()
+end)
+main_a = createTab_a("main a")
+main_b = createTab_b("main b")
+
+createSelectionButton("Aimbot", function()
+    activetab = 1
+    updateTabs()
+end)
+aimbot_a = createTab_a("aimbot a")
+aimbot_b = createTab_b("aimbot b")
+
+createSelectionButton("Visuals", function()
+    activetab = 2
+    updateTabs()
+end)
+visuals_a = createTab_a("visuals a")
+visuals_b = createTab_b("visuals b")
+
+--seperator
+selectionT += 1
+
+local seperatorpos = Vector2.new(padding, padding * selectionT + selectionSize.Y * (selectionT - 1))
+local seperator = Instance.new("TextLabel")
+seperator.Size = UDim2.new(0, selectionbuttonSize.X, 0, selectionbuttonSize.Y / 2)
+seperator.Position = UDim2.new(0, seperatorpos.X, 0, seperatorpos.Y)
+seperator.BackgroundColor3 = Color3.fromRGB(15, 15, 15) 
+seperator.BackgroundTransparency = elementtransparency
+seperator.BorderSizePixel = 1
+seperator.Text = "Game specific"
+seperator.TextColor3 = Color3.fromRGB(200, 200, 200) 
+seperator.Parent = selectionChild 
+
+seperatordone = selectionbuttonSize.Y / 2 + padding
+selectionT -= 1
+
+
+if isgameSupported then
+
+    if game.GameId == 9168386959 then --100 Waves
+        createSelectionButton("Main", function()
+            activetab = 3
+            updateTabs()
+        end)
+        waves_main_a = createTab_a("100waves main a")
+        waves_main_b = createTab_b("100waves main b")
+
+        createSelectionButton("Aimbot", function()
+            activetab = 4
+            updateTabs()
+        end)
+        waves_aimbot_a = createTab_a("100waves aimbot a")
+        waves_aimbot_b = createTab_b("100waves aimbot b")
+
+        createSelectionButton("Visuals", function()
+            activetab = 5
+            updateTabs()
+        end)
+        waves_visuals_a = createTab_a("100waves visuals a")
+        waves_visuals_b = createTab_b("100waves visuals b")
+
+        createSelectionButton("Misc", function()
+            activetab = 6
+            updateTabs()
+        end)
+        waves_misc_a = createTab_a("100waves misc a")
+        waves_misc_b = createTab_b("100waves misc a")
+    end
+
+    if game.GameId == 9833771859 then --stepforiq
+        createSelectionButton("Main", function()
+            activetab = 3
+            updateTabs()
+        end)
+        stepforiq_main_a = createTab_a("stepforiq main a")
+        stepforiq_main_b = createTab_b("stepforiq main b")
+    end
+
+    if game.GameId == 8316902627 then --Plants vs Brainrots
+        createSelectionButton("Main", function()
+            activetab = 3
+            updateTabs()
+        end)
+        plantsvsbrainrots_main_a = createTab_a("plantsvsbrainrots main a")
+        plantsvsbrainrots_main_b = createTab_b("plantsvsbrainrots main b")
+    end
+
+    if game.GameId == 7436755782 then --gag
+        createSelectionButton("Shop", function()
+            activetab = 3
+            updateTabs()
+        end)
+        gag_shop_a = createTab_a("gag shop a")
+        gag_shop_b = createTab_b("gag shop b")
+    end
+end
+
+
+updateTabs()
+
+
+--ui elements
+local function checkbox(parent, text, cfg_state, i_ypos, callback)
+    local posy = padding + (defaultsize * i_ypos) + (padding * i_ypos)
+    local state = cfg_state
+
+    local box = Instance.new("TextButton")
+    box.Size = UDim2.new(0, 16, 0, 16)
+    box.Position = UDim2.new(0, padding, 0, posy)
+    box.Text = isChecked and "x" or ""
+    box.Parent = parent
+
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(0,  padding * 2 + defaultsize, 0, defaultsize) --TextService:GetTextSize(text, 16, Enum.Font.SourceSans, Vector2.new()).X
+    label.Position = UDim2.new(0, defaultsize + padding * 2, 0, posy)
+    label.TextColor3 = Color3.fromRGB(255,255,255)
+    label.BackgroundTransparency = 1
+    label.Text = text
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.Parent = parent
+
+    box.MouseButton1Click:Connect(function()
+        state = not state
+        box.Text = state and "x" or ""
+
+        if callback then
+            callback(state)
+        end
+    end)
+end
+
+local function slider(parent, text, min, max, default, i_ypos, callback)
+    min = min or 0
+    max = max or 100
+    default = default or min
+
+    local posy = padding + (defaultsize * i_ypos) + (padding * i_ypos)
+
+    local sliderWidth = 120
+    local sliderHeight = 6
+    local knobSize = 14
+
+    local value = default
+    local dragging = false
+
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(0, 120, 0, defaultsize)
+    label.Position = UDim2.new(0, padding, 0, posy)
+    label.Text = text
+    label.TextColor3 = Color3.new(1,1,1)
+    label.BackgroundTransparency = 1
+    label.Font = Enum.Font.SourceSans
+    label.TextSize = 14
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.Parent = parent
+
+
+    local valueLabel = Instance.new("TextLabel")
+    valueLabel.Size = UDim2.new(0, 40, 0, defaultsize)
+    valueLabel.Position = UDim2.new(1, -padding - 40, 0, posy)
+    valueLabel.Text = tostring(default)
+    valueLabel.TextColor3 = Color3.new(1,1,1)
+    valueLabel.BackgroundTransparency = 1
+    valueLabel.Font = Enum.Font.SourceSans
+    valueLabel.TextSize = 14
+    valueLabel.TextXAlignment = Enum.TextXAlignment.Right
+    valueLabel.Parent = parent
+
+
+    local sliderBg = Instance.new("Frame")
+    sliderBg.Size = UDim2.new(0, sliderWidth, 0, sliderHeight)
+    sliderBg.Position = UDim2.new(1, -sliderWidth - padding - 40, 0, posy + (defaultsize - sliderHeight) / 2)
+    sliderBg.BackgroundColor3 = Color3.fromRGB(40,40,40)
+    sliderBg.BorderSizePixel = 1
+    sliderBg.Parent = parent
+
+
+    local sliderFill = Instance.new("Frame")
+    sliderFill.Size = UDim2.new(0,0,1,0)
+    sliderFill.BackgroundColor3 = Color3.fromRGB(18,179,112)
+    sliderFill.BorderSizePixel = 0
+    sliderFill.Parent = sliderBg
+
+
+    local knob = Instance.new("TextButton")
+    knob.Size = UDim2.new(0, knobSize, 0, knobSize)
+    knob.BackgroundColor3 = Color3.fromRGB(200,200,200)
+    knob.Text = ""
+    knob.BorderSizePixel = 1
+    knob.AutoButtonColor = false
+    knob.Parent = sliderBg
+
+
+    local function updateVisual(val)
+        local pct = (val - min) / (max - min)
+        sliderFill.Size = UDim2.new(pct,0,1,0)
+        knob.Position = UDim2.new(pct,-knobSize/2,0.5,-knobSize/2)
+        valueLabel.Text = tostring(val)
+    end
+
+    updateVisual(value)
+
+
+    knob.MouseButton1Down:Connect(function()
+        dragging = true
+    end)
+
+    UserInputService.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = false
+        end
+    end)
+
+
+    UserInputService.InputChanged:Connect(function(input)
+        if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+
+            local absPos = sliderBg.AbsolutePosition.X
+            local absSize = sliderBg.AbsoluteSize.X
+            local mouseX = input.Position.X
+
+            local pct = math.clamp((mouseX - absPos) / absSize, 0, 1)
+
+            value = math.floor(min + (max - min) * pct)
+
+            updateVisual(value)
+
+            if callback then
+                callback(value)
+            end
+        end
+    end)
+end
+
+local function combobox(parent, text, options, default, i_ypos, callback)
+    local posy = padding + (defaultsize * i_ypos) + (padding * i_ypos)
+
+    local selected = default or options[1] or ""
+    local open = false
+
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(0, 120, 0, defaultsize)
+    label.Position = UDim2.new(0, padding, 0, posy)
+    label.Text = text
+    label.TextColor3 = Color3.new(1,1,1)
+    label.BackgroundTransparency = 1
+    label.Font = Enum.Font.SourceSans
+    label.TextSize = 14
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.Parent = parent
+
+
+    local dropWidth = 120
+    local button = Instance.new("TextButton")
+    button.Size = UDim2.new(0, dropWidth, 0, defaultsize)
+    button.Position = UDim2.new(1, -padding - dropWidth, 0, posy)
+    button.Text = tostring(selected)
+    button.BackgroundColor3 = Color3.fromRGB(40,40,40)
+    button.TextColor3 = Color3.new(1,1,1)
+    button.Font = Enum.Font.SourceSans
+    button.TextSize = 14
+    button.BorderSizePixel = 1
+    button.Parent = parent
+
+
+    local dropdownFrame = Instance.new("Frame")
+    dropdownFrame.Size = UDim2.new(0, dropWidth, 0, #options * defaultsize)
+    dropdownFrame.Position = UDim2.new(1, -padding - dropWidth, 0, posy + defaultsize)
+    dropdownFrame.BackgroundColor3 = Color3.fromRGB(30,30,30)
+    dropdownFrame.BorderSizePixel = 1
+    dropdownFrame.ZIndex = 10
+    dropdownFrame.Visible = false
+    dropdownFrame.Parent = parent
+
+    for i, option in ipairs(options) do
+        local optBtn = Instance.new("TextButton")
+        optBtn.Size = UDim2.new(1, 0, 0, defaultsize)
+        optBtn.Position = UDim2.new(0, 0, 0, (i - 1) * defaultsize)
+        optBtn.Text = tostring(option)
+        optBtn.BackgroundColor3 = Color3.fromRGB(40,40,40)
+        optBtn.TextColor3 = Color3.new(1,1,1)
+        optBtn.Font = Enum.Font.SourceSans
+        optBtn.TextSize = 14
+        optBtn.BorderSizePixel = 0
+        optBtn.ZIndex = 11
+        optBtn.Parent = dropdownFrame
+
+        optBtn.MouseButton1Click:Connect(function()
+            selected = option
+            button.Text = tostring(option)
+            dropdownFrame.Visible = false
+            open = false
+
+            if callback then
+                callback(selected)
+            end
+        end)
+    end
+
+    button.MouseButton1Click:Connect(function()
+        open = not open
+        dropdownFrame.Visible = open
+    end)
+
+    return {
+        get = function()
+            return selected
+        end,
+
+        set = function(value)
+            selected = value
+            button.Text = tostring(value)
+
+            if callback then
+                callback(selected)
+            end
+        end
+    }
+end
+
+local function multiselectbox(parent, text, options, default, i_ypos, callback)
+    local posy = padding + (defaultsize * i_ypos) + (padding * i_ypos)
+
+    local selected = {}
+    if default then
+        for _, v in ipairs(default) do
+            selected[v] = true
+        end
+    end
+
+    local open = false
+
+    local function getSelectedList()
+        local t = {}
+        for _, opt in ipairs(options) do
+            if selected[opt] then
+                table.insert(t, opt)
+            end
+        end
+        return t
+    end
+
+    local function updateText(button)
+        local list = getSelectedList()
+        if #list == 0 then
+            button.Text = "None"
+        else
+            button.Text = table.concat(list, ", ")
+        end
+    end
+
+    -- LABEL
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(0, 120, 0, defaultsize)
+    label.Position = UDim2.new(0, padding, 0, posy)
+    label.Text = text
+    label.TextColor3 = Color3.new(1,1,1)
+    label.BackgroundTransparency = 1
+    label.Font = Enum.Font.SourceSans
+    label.TextSize = 14
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.Parent = parent
+
+    -- BUTTON
+    local dropWidth = 120
+    local button = Instance.new("TextButton")
+    button.Size = UDim2.new(0, dropWidth, 0, defaultsize)
+    button.Position = UDim2.new(1, -padding - dropWidth, 0, posy)
+    button.BackgroundColor3 = Color3.fromRGB(40,40,40)
+    button.TextColor3 = Color3.new(1,1,1)
+    button.Font = Enum.Font.SourceSans
+    button.TextSize = 14
+    button.BorderSizePixel = 1
+    button.Parent = parent
+
+    -- DROPDOWN
+    local dropdownFrame = Instance.new("Frame")
+    dropdownFrame.Size = UDim2.new(0, dropWidth, 0, #options * defaultsize)
+    dropdownFrame.Position = UDim2.new(1, -padding - dropWidth, 0, posy + defaultsize)
+    dropdownFrame.BackgroundColor3 = Color3.fromRGB(30,30,30)
+    dropdownFrame.BorderSizePixel = 1
+    dropdownFrame.ZIndex = 10
+    dropdownFrame.Visible = false
+    dropdownFrame.Parent = parent
+
+    -- OPTIONS
+    for i, option in ipairs(options) do
+        local optBtn = Instance.new("TextButton")
+        optBtn.Size = UDim2.new(1, 0, 0, defaultsize)
+        optBtn.Position = UDim2.new(0, 0, 0, (i - 1) * defaultsize)
+        optBtn.BackgroundColor3 = Color3.fromRGB(40,40,40)
+        optBtn.TextColor3 = Color3.new(1,1,1)
+        optBtn.Font = Enum.Font.SourceSans
+        optBtn.TextSize = 14
+        optBtn.BorderSizePixel = 0
+        optBtn.ZIndex = 11
+        optBtn.Parent = dropdownFrame
+
+        local function updateOptionText()
+            local prefix = selected[option] and "[x] " or "[ ] "
+            optBtn.Text = prefix .. tostring(option)
+        end
+
+        updateOptionText()
+
+        optBtn.MouseButton1Click:Connect(function()
+            selected[option] = not selected[option]
+            updateOptionText()
+            updateText(button)
+
+            if callback then
+                callback(getSelectedList())
+            end
+        end)
+    end
+
+    -- TOGGLE DROPDOWN
+    button.MouseButton1Click:Connect(function()
+        open = not open
+        dropdownFrame.Visible = open
+    end)
+
+    -- INIT TEXT
+    updateText(button)
+
+    return {
+        get = function()
+            return getSelectedList()
+        end,
+
+        set = function(values)
+            selected = {}
+            for _, v in ipairs(values) do
+                selected[v] = true
+            end
+
+            -- update all buttons
+            for _, child in ipairs(dropdownFrame:GetChildren()) do
+                if child:IsA("TextButton") then
+                    local option = child.Text:gsub("^%[.?%]%s", "")
+                    local prefix = selected[option] and "[x] " or "[ ] "
+                    child.Text = prefix .. option
+                end
+            end
+
+            updateText(button)
+
+            if callback then
+                callback(getSelectedList())
+            end
+        end
+    }
+end
+
+local function hotkey(parent, text, default_key, ishold, i_ypos, callback, ignoreHoldState)
+    local posy = padding + (defaultsize * i_ypos) + (padding * i_ypos)
+
+    local currentKey = default_key
+
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(0, 120, 0, defaultsize)
+    label.Position = UDim2.new(0, padding, 0, posy)
+    label.Text = text
+    label.TextColor3 = Color3.new(1,1,1)
+    label.BackgroundTransparency = 1
+    label.Font = Enum.Font.SourceSans
+    label.TextSize = 14
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.Parent = parent
+
+
+    local frame = Instance.new("TextButton")
+    frame.Size = UDim2.new(0, 60, 0, defaultsize)
+    frame.Position = UDim2.new(1, -padding - 60, 0, posy)
+    frame.Text = currentKey and currentKey.Name or "None"
+    frame.BackgroundColor3 = Color3.fromRGB(40,40,40) Color3.fromRGB(60,60,60)
+    frame.TextColor3 = Color3.new(1,1,1)
+    frame.Font = Enum.Font.SourceSans
+    frame.TextSize = 14
+    frame.BorderSizePixel = 1
+    frame.Parent = parent
+
+    if not ignoreHoldState then
+        frame.MouseButton2Click:Connect(function()
+            ishold.hold = not ishold.hold
+            if ishold.hold then
+                frame.BackgroundColor3 = Color3.fromRGB(60,60,60)
+            else
+                frame.BackgroundColor3 = Color3.fromRGB(40,40,40)
+            end
+        end)
+    end
+
+    frame.MouseButton1Click:Connect(function()
+        frame.Text = "..."
+
+        local connection
+        connection = UserInputService.InputBegan:Connect(function(input, gameProcessed)
+
+            -- Escape should always work
+            if input.KeyCode == Enum.KeyCode.Escape then
+                currentKey = nil
+                frame.Text = "None"
+
+                if callback then
+                    callback(currentKey)
+                end
+
+                connection:Disconnect()
+                return
+            end
+
+            if gameProcessed then return end
+
+            if input.UserInputType == Enum.UserInputType.Keyboard then
+                currentKey = input.KeyCode
+                frame.Text = currentKey.Name
+
+                if callback then
+                    callback(currentKey)
+                end
+
+                connection:Disconnect()
+            end
+        end)
+    end)
+
+    return {
+        get = function()
+            return currentKey
+        end,
+
+        set = function(key)
+            currentKey = key
+            frame.Text = key and key.Name or "None"
+
+            if callback then
+                callback(currentKey)
+            end
+        end
+    }
+end
+
+
+--gamespecific pre ui
+if game.GameId == 7436755782 then 
+    for _, entry in ipairs(playerGui.Seed_Shop.Frame.ScrollingFrame:GetChildren()) do
+        if entry:FindFirstChild("Main_Frame") then
+            table.insert(gag_shop_seeds_all, entry.Name)
+        end
+    end
+end
+
+--general
+--main
+local main_a_i = 0
+local main_b_i = 0
+checkbox(main_a, "Noclip", general_main_noclip_bool, main_a_i, function(state)
+    general_main_noclip_bool = state
+end)
+
+hotkey(main_a, "", general_main_noclip_hotkey, general_main_noclip_hotkey_hold, main_a_i, function(key)
+    general_main_noclip_hotkey = key
+end)
+
+main_a_i += 1
+slider(main_a, "Noclip speed", 10, 500, general_main_noclip_speed, main_a_i, function(state)
+    general_main_noclip_speed = state
+end)
+
+main_a_i += 1
+checkbox(main_a, "Speedhack", general_main_speed_bool, main_a_i, function(state)
+    general_main_speed_bool = state
+end)
+
+hotkey(main_a, "", general_main_speed_hotkey, general_main_speed_hotkey_hold, main_a_i, function(key)
+    general_main_speed_hotkey = key
+end)
+
+main_a_i += 1
+slider(main_a, "Speedhack speed", 10, 500, general_main_speed_speed, main_a_i, function(state)
+    general_main_speed_speed = state
+end)
+
+main_a_i += 1
+checkbox(main_a, "Jump height", general_main_jumpheight_bool, main_a_i, function(state)
+    general_main_jumpheight_bool = state
+end)
+
+hotkey(main_a, "", general_main_jumpheight_hotkey, general_main_jumpheight_hotkey_hold, main_a_i, function(key)
+    general_main_jumpheight_hotkey = key
+end)
+
+main_a_i += 1
+slider(main_a, "Jump height value", 10, 500, general_main_jumpheight_value, main_a_i, function(state)
+    general_main_jumpheight_value = state
+end)
+
+
+--b
+checkbox(main_b, "Autoclicker", general_main_autoclicker_bool, main_b_i, function(state)
+    general_main_autoclicker_bool = state
+end)
+
+hotkey(main_b, "", general_main_autoclicker_hotkey, general_main_autoclicker_hotkey_hold, main_b_i, function(key)
+    general_main_autoclicker_hotkey = key
+end)
+
+main_b_i += 1
+hotkey(main_b, "Key to click", general_main_autoclicker_keytoklick, false, main_b_i, function(key)
+    general_main_autoclicker_keytoklick = key
+end, true)
+
+main_b_i += 1
+slider(main_b, "Autoclicker delay (ms)", 0, 5000, general_main_autoclicker_delay, main_b_i, function(state)
+    general_main_autoclicker_delay = state / 1000
+end)
+
+
+--aimbot
+local aimbot_a_i = 0
+local aimbot_b_i = 0
+checkbox(aimbot_a, "Aimbot", general_aimbot_bool, aimbot_a_i, function(state)
+    general_aimbot_bool = state
+end)
+
+hotkey(aimbot_a, "", general_aimbot_hotkey, general_aimbot_hotkey_hold, aimbot_a_i, function(key)
+    general_aimbot_hotkey = key
+end)
+
+aimbot_a_i += 1
+checkbox(aimbot_a, "Aimbot debug", general_aimbot_debug_bool, aimbot_a_i, function(state)
+    general_aimbot_debug_bool = state
+end)
+
+aimbot_a_i += 1
+checkbox(aimbot_a, "Autoshoot", general_aimbot_autoshoot_bool, aimbot_a_i, function(state)
+    general_aimbot_autoshoot_bool = state
+end)
+
+aimbot_a_i += 1
+slider(aimbot_a, "Max distance", 0, 5000, general_aimbot_distance, aimbot_a_i, function(state)
+    general_aimbot_distance = state
+end)
+
+aimbot_a_i += 1
+combobox(aimbot_a, "Target selection", {"Closest", "Crosshair"}, general_aimbot_targetselection, aimbot_a_i, function(value)
+    general_aimbot_targetselection = value
+end)
+
+aimbot_a_i += 1
+slider(aimbot_a, "Smoothness", 0, 100, general_aimbot_smooth, aimbot_a_i, function(state)
+    general_aimbot_smooth = state
+end)
+
+
+
+--visuals
+local visuals_a_i = 0
+local visuals_b_i = 0
+checkbox(visuals_a, "Bounding box", general_visuals_box_bool, visuals_a_i, function(state)
+    general_visuals_box_bool = state
+end)
+
+visuals_a_i += 1
+checkbox(visuals_a, "Name", general_visuals_name_bool, visuals_a_i, function(state)
+    general_visuals_name_bool = state
+end)
+
+visuals_a_i += 1
+checkbox(visuals_a, "Health", general_visuals_health_bool, visuals_a_i, function(state)
+    general_visuals_health_bool = state
+end)
+
+visuals_a_i += 1
+checkbox(visuals_a, "Distance", general_visuals_distance_bool, visuals_a_i, function(state)
+    general_visuals_distance_bool = state
+end)
+
+--gamespecific
+--100Waves
+--main
+local waves_main_a_i = 0
+local waves_main_b_i = 0
+checkbox(waves_main_a, "Freeze zombies", waves_main_freeze_bool, waves_main_a_i, function(state)
+    waves_main_freeze_bool = state
+end)
+
+waves_main_a_i += 1
+slider(waves_main_a, "Freeze distance",  1, 100, waves_main_freeze_distance, waves_main_a_i, function(state)
+    waves_main_freeze_distance = state
+end)
+
+--aimbot
+local waves_aimbot_a_i = 0
+local waves_aimbot_b_i = 0
+local test = false
+checkbox(waves_aimbot_a, "Aimbot", waves_aimbot_bool, waves_aimbot_a_i, function(state)
+    waves_aimbot_bool = state
+end)
+
+hotkey(waves_aimbot_a, "", waves_aimbot_hotkey, waves_aimbot_hotkey_hold, waves_aimbot_a_i, function(key)
+    waves_aimbot_hotkey = key
+end)
+
+waves_aimbot_a_i += 1
+checkbox(waves_aimbot_a, "Aimbot debug", waves_aimbot_debug_bool, waves_aimbot_a_i, function(state)
+    waves_aimbot_debug_bool = state
+end)
+
+waves_aimbot_a_i += 1
+slider(waves_aimbot_a, "Aimbot distance", 1, 100, waves_aimbot_distance, waves_aimbot_a_i, function(state)
+    waves_aimbot_distance = state
+end)
+
+waves_aimbot_a_i += 1
+checkbox(waves_aimbot_a, "Reload spam", waves_aimbot_reloadspam, waves_aimbot_a_i, function(state)
+    waves_aimbot_reloadspam = state
+end)
+
+
+--visuals
+local waves_visuals_a_i = 0
+local waves_visuals_b_i = 0
+checkbox(waves_visuals_a, "Bounding box", waves_visuals_box_bool, waves_visuals_a_i, function(state)
+    waves_visuals_box_bool = state
+end)
+
+waves_visuals_a_i += 1
+checkbox(waves_visuals_a, "Name", waves_visuals_name_bool, waves_visuals_a_i, function(state)
+    waves_visuals_name_bool = state
+end)
+
+waves_visuals_a_i += 1
+checkbox(waves_visuals_a, "Health bar", waves_visuals_health_bool, waves_visuals_a_i, function(state)
+    waves_visuals_health_bool = state
+end)
+
+waves_visuals_a_i += 1
+checkbox(waves_visuals_a, "Distance", waves_visuals_distance_bool, waves_visuals_a_i, function(state)
+    waves_visuals_distance_bool = state
+end)
+
+
+--misc
+
+
+--stepforiq
+local stepforiq_main_a_i = 0
+local stepforiq_main_b_i = 0
+checkbox(stepforiq_main_a, "Spam step", stepforiq_main_spamstep_bool, stepforiq_main_a_i, function(state)
+    stepforiq_main_spamstep_bool = state
+end)
+
+stepforiq_main_a_i += 1
+checkbox(stepforiq_main_a, "Autowin", stepforiq_main_autowin_bool, stepforiq_main_a_i, function(state)
+    stepforiq_main_autowin_bool = state
+end)
+
+stepforiq_main_a_i += 1
+checkbox(stepforiq_main_a, "Duel autowin", stepforiq_main_Duelautowin_bool, stepforiq_main_a_i, function(state)
+    stepforiq_main_Duelautowin_bool = state
+end)
+
+
+--plants vs brainrots
+local plantsvsbrainrots_main_a_i = 0
+local plantsvsbrainrots_main_b_i = 0
+checkbox(plantsvsbrainrots_main_a, "Auto equip best", plantsvsbrainrots_main_autoequip_bool, plantsvsbrainrots_main_a_i, function(state)
+    plantsvsbrainrots_main_autoequip_bool = state
+end)
+
+plantsvsbrainrots_main_a_i += 1
+slider(plantsvsbrainrots_main_a, "Auto equip delay ", 10, 1000, plantsvsbrainrots_main_autoequip_delay, plantsvsbrainrots_main_a_i, function(state)
+    plantsvsbrainrots_main_autoequip_delay = state 
+end)
+
+plantsvsbrainrots_main_a_i += 1
+checkbox(plantsvsbrainrots_main_a, "Auto buy", plantsvsbrainrots_main_autobuy_bool, plantsvsbrainrots_main_a_i, function(state)
+    plantsvsbrainrots_main_autobuy_bool = state
+end)
+
+plantsvsbrainrots_main_a_i += 1
+checkbox(plantsvsbrainrots_main_a, "Auto sell", plantsvsbrainrots_main_autosell_bool, plantsvsbrainrots_main_a_i, function(state)
+    plantsvsbrainrots_main_autosell_bool = state
+end)
+
+
+--gag
+local gag_shop_a_i = 0
+local gag_shop_b_i = 0
+checkbox(gag_shop_a, "Auto sell", gag_shop_autosell_bool, gag_shop_a_i, function(state)
+    gag_shop_autosell_bool = state
+end)
+
+gag_shop_a_i += 1
+slider(gag_shop_a, "Auto sell delay", 10, 1000, gag_shop_autosell_delay, gag_shop_a_i, function(state)
+    gag_shop_autosell_delay = state
+end)
+
+gag_shop_a_i += 1
+checkbox(gag_shop_a, "Auto buy", gag_shop_autobuy_bool, gag_shop_a_i, function(state)
+    gag_shop_autobuy_bool = state
+end)
+
+gag_shop_a_i += 1
+multiselectbox(gag_shop_a, "Autobuy seeds", gag_shop_seeds_all, gag_shop_autobuy_seeds, gag_shop_a_i, function(values)
+    gag_shop_autobuy_seeds = values
+end)
+
+
+--cheat lib
+local drawingPool = {}
+local drawingClasses = {}
+local drawingIndex = 0
+
+local function getDrawing(class)
+    drawingIndex += 1
+    local obj = drawingPool[drawingIndex]
+    if obj and drawingClasses[drawingIndex] == class then
+        obj.Visible = true
+        return obj
+    end
+    -- wrong type or doesn't exist, replace it
+    if obj then obj:Remove() end
+    local new = Drawing.new(class)
+    drawingPool[drawingIndex] = new
+    drawingClasses[drawingIndex] = class
+    return new
+end
+
+local function beginFrame()
+    drawingIndex = 0
+end
+
+local function endFrame()
+    -- hide any leftover drawings from previous frame
+    for i = drawingIndex + 1, #drawingPool do
+        drawingPool[i].Visible = false
+    end
+end
+
+local function drawLine(from, to, color, thickness)
+    local line = getDrawing("Line")
+    line.From = from
+    line.To = to
+    line.Color = color or Color3.new(1, 0, 0)
+    line.Thickness = thickness or 1.5
+    line.Visible = true
+end
+
+local function drawText(position, text, color)
+    local txt = getDrawing("Text")
+    txt.Position = position
+    txt.Text = text
+    txt.Color = color or Color3.new(1, 1, 1)
+    txt.Size = 12
+    txt.Font = 2
+    txt.Visible = true
+end
+
+local function clearDrawings()
+    for i, d in ipairs(drawingPool) do
+        d:Remove()
+        drawingPool[i] = nil
+    end
+    drawingIndex = 0
+end
+
+local function getBoundingBox(cframe, size)
+        size = size or Vector3.new(4, 6, 4)
+    local half = size / 2
+
+    local corners = {
+        cframe * Vector3.new(-half.X, -half.Y, -half.Z),
+        cframe * Vector3.new( half.X, -half.Y, -half.Z),
+        cframe * Vector3.new( half.X,  half.Y, -half.Z),
+        cframe * Vector3.new(-half.X,  half.Y, -half.Z),
+        cframe * Vector3.new(-half.X, -half.Y,  half.Z),
+        cframe * Vector3.new( half.X, -half.Y,  half.Z),
+        cframe * Vector3.new( half.X,  half.Y,  half.Z),
+        cframe * Vector3.new(-half.X,  half.Y,  half.Z),
+    }
+
+    local minX, minY = math.huge, math.huge
+    local maxX, maxY = -math.huge, -math.huge
+
+    for _, corner in ipairs(corners) do
+        local screenPos, onScreen = cam:WorldToViewportPoint(corner)
+        if not onScreen then return end
+        minX = math.min(minX, screenPos.X)
+        minY = math.min(minY, screenPos.Y)
+        maxX = math.max(maxX, screenPos.X)
+        maxY = math.max(maxY, screenPos.Y)
+    end
+
+    local topLeft = Vector2.new(minX, minY)
+    local topRight = Vector2.new(maxX, minY)
+    local bottomRight = Vector2.new(maxX, maxY)
+    local bottomLeft = Vector2.new(minX, maxY)
+    return topLeft, topRight, bottomRight, bottomLeft
+end
+
+
+
+local function drawBox(topLeft, topRight, bottomRight, bottomLeft, color)
+    drawLine(topLeft, topRight, color)
+    drawLine(topRight, bottomRight, color)
+    drawLine(bottomRight, bottomLeft, color)
+    drawLine(bottomLeft, topLeft, color)
+end
+
+local function drawHealthBar(bottomPos, topPos, health, maxhealth)
+    local healthPercent = math.clamp(health / maxhealth, 0, 1)
+    if healthPercent == 1 then return end -- don't draw if at full health
+    local hpText = health .. "/" .. maxhealth
+    local barEnd = bottomPos:Lerp(topPos, healthPercent)
+    local barColor = Color3.fromRGB(
+        math.floor((1 - healthPercent) * 255),
+        math.floor(healthPercent * 211),
+        0
+    )
+
+    drawLine(bottomPos, barEnd, barColor, 2)
+    local textSize = TextService:GetTextSize(hpText, 12, Enum.Font.SourceSans, Vector2.new())
+    drawText(Vector2.new(topPos.X - textSize.X - padding, topPos.Y), hpText, Color3.new(1, 1, 1))
+end
+
+local function getDistance(cframe)
+    return math.floor((cam.CFrame.Position - cframe.Position).Magnitude)
+end
+
+local function getCrosshairDistance(char)
+    local head = char and char:FindFirstChild("Head")
+    if not head then return math.huge end
+
+    local screenPos, onScreen = cam:WorldToViewportPoint(head.Position)
+    if not onScreen then
+        return math.huge -- ignore off-screen targets
+    end
+
+    local center = cam.ViewportSize / 2
+    return (Vector2.new(screenPos.X, screenPos.Y) - center).Magnitude
+end
+
+local function isStringInList(str, list)
+    for _, v in ipairs(list) do
+        if v == str then
+            return true
+        end
+    end
+    return false
+end
+
+
+
+--general cheat loop
+local noclipdisableonce = false
+local noclipHotkeyState = false
+local speedhackfallback = 0
+local jumpheightfallback = 0
+local autoclickerRunning = false
+local lastClickTime = 0
+local playerlist = {}
+generallogic = RunService.Heartbeat:Connect(function()
+
+    local noclipActive = general_main_noclip_bool and (general_main_noclip_hotkey == nil or noclipHotkeyState)
+    if noclipActive then
+        local character = player.Character
+        if character and character:FindFirstChild("HumanoidRootPart") and character:FindFirstChildOfClass("Humanoid") then
+            local hrp = character.HumanoidRootPart
+            local humanoid = character:FindFirstChildOfClass("Humanoid")
+            humanoid.PlatformStand = true
+            hrp.Velocity = Vector3.new(0, 0, 0)
+            hrp.RotVelocity = Vector3.new(0, 0, 0)
+            local camLook = cam.CFrame.LookVector
+            local moveDirection = humanoid.MoveDirection
+            local dt = RunService.Heartbeat:Wait()
+            local move = Vector3.new(moveDirection.X, camLook.Y * moveDirection.Magnitude, moveDirection.Z)
+            hrp.CFrame = hrp.CFrame + move * general_main_noclip_speed * dt
+            noclipdisableonce = true
+        end
+    elseif noclipdisableonce then
+    --reset character
+        local character = player.Character
+        if character and character:FindFirstChild("HumanoidRootPart") and character:FindFirstChildOfClass("Humanoid") then
+            local humanoid = character:FindFirstChildOfClass("Humanoid")
+            humanoid.PlatformStand = false
+        end
+        noclipdisableonce = false
+    end
+
+    --visuals
+    beginFrame()
+    local c_playerlist = {}
+    for _, entry in ipairs(players:GetPlayers()) do
+        if entry == player then continue end
+        if entry.Character then 
+            table.insert(c_playerlist, {
+                instance = entry,
+                distance = getDistance(entry.Character:GetPivot())
+            })
+            local topLeft, topRight, bottomRight, bottomLeft = getBoundingBox(entry.Character:GetPivot() , entry.Character:GetExtentsSize())
+            if not topLeft or not topRight or not bottomRight or not bottomLeft then continue end
+            if general_visuals_box_bool then
+                drawBox(topLeft, topRight, bottomRight, bottomLeft, general_visuals_box_color)
+            end
+
+            if general_visuals_name_bool then
+                drawText(Vector2.new(topLeft.X + (topRight.X - topLeft.X) / 2 - TextService:GetTextSize(entry.Name, 14, Enum.Font.SourceSans, Vector2.new()).X / 2, topLeft.Y - TextService:GetTextSize(entry.Name, 14, Enum.Font.SourceSans, Vector2.new()).Y ), entry.Name, white)
+            end
+
+            if general_visuals_health_bool then
+                local humanoid = entry.Character:FindFirstChildOfClass("Humanoid")
+                if humanoid then
+                    drawHealthBar(bottomLeft, topLeft, humanoid.Health, humanoid.MaxHealth)
+                end
+            end
+
+            if general_visuals_distance_bool then
+                drawText(bottomLeft, tostring(getDistance(entry.Character:GetPivot()) / 10) .. "m", white)
+            end
+            
+        end
+    end
+
+    if general_aimbot_targetselection == "Closest" then 
+        table.sort(c_playerlist, function(a, b)
+            return getDistance(a.instance.Character:GetPivot()) < getDistance(b.instance.Character:GetPivot())
+        end)
+    else 
+        table.sort(c_playerlist, function(a, b)
+            return getCrosshairDistance(a.instance.Character) < getCrosshairDistance(b.instance.Character)
+        end)
+    end
+
+    playerlist = c_playerlist
+    local target = playerlist[1]
+    local head = target.instance.Character:FindFirstChild("Head")
+    if target and target.instance.Character and head then
+        if general_aimbot_bool and (general_aimbot_hotkey == nil or general_aimbot_HotkeyState) then
+            if general_aimbot_debug_bool then
+                local topLeft, topRight, bottomRight, bottomLeft = getBoundingBox(head.CFrame, head.Size)
+                if topLeft and topRight and bottomRight and bottomLeft then
+                    drawBox(topLeft, topRight, bottomRight, bottomLeft)
+                end
+            end
+            if not general_aimbot_smooth == 0 then
+                cam.CFrame = CFrame.lookAt(cam.CFrame.Position, head.Position)
+            else
+                local camPos = cam.CFrame.Position
+                local targetDir = (head.Position - camPos).Unit
+                local currentDir = cam.CFrame.LookVector
+                local newDir = currentDir:Lerp(targetDir, general_aimbot_smooth / 100)
+                cam.CFrame = CFrame.lookAt(camPos, camPos + newDir)
+            end
+            if general_aimbot_autoshoot_bool and target.distance / 10 < general_aimbot_distance then --autoshoot
+                mouse1click()
+            end
+        end
+    end
+
+    if general_main_speed_bool and (general_main_speed_hotkey == nil or general_main_speed_HotkeyState) then
+        if speedhackfallback == 0 then
+            speedhackfallback = character.Humanoid.WalkSpeed
+        end
+        character.Humanoid.WalkSpeed = general_main_speed_speed
+    elseif speedhackfallback ~= 0 then
+        character.Humanoid.WalkSpeed = speedhackfallback
+        speedhackfallback = 0
+    end
+
+    if general_main_jumpheight_bool and (general_main_jumpheight_hotkey == nil or general_main_jumpheight_HotkeyState) then
+        if jumpheightfallback == 0 then
+            jumpheightfallback = character.Humanoid.JumpPower
+        end
+        character.Humanoid.JumpPower = general_main_jumpheight_value
+        character.Humanoid.UseJumpPower = true
+    elseif jumpheightfallback ~= 0 then
+        character.Humanoid.JumpPower = jumpheightfallback
+        jumpheightfallback = 0
+    end
+
+
+    if general_main_autoclicker_bool and isrbxactive() and not frame.Visible and (general_main_autoclicker_hotkey == nil or general_main_autoclicker_HotkeyState) then
+
+        if not general_main_autoclicker_keytoklick then --mouseclick
+            if not autoclickerRunning then
+                mouse1click()
+                autoclickerRunning = true
+                lastClickTime = os.clock()
+            elseif tonumber(general_main_autoclicker_delay) + lastClickTime < os.clock() then
+                autoclickerRunning = false
+            end
+        else
+            if not autoclickerRunning then --keyboard click
+                VirtualInputManager:SendKeyEvent(true, general_main_autoclicker_keytoklick, false, game)
+                autoclickerRunning = true
+                lastClickTime = os.clock()
+            elseif tonumber(general_main_autoclicker_delay) + lastClickTime < os.clock() then
+                VirtualInputManager:SendKeyEvent(false, general_main_autoclicker_keytoklick, false, game)
+                autoclickerRunning = false
+            end
+        end
+    end
+
+    endFrame()
+end)
+
+
+--zombiegame hack
+local zombies = {}
+local waves_aimbot_HotkeyState = false
+waves_logic = RunService.Heartbeat:Connect(function()
+    if game.GameId ~= 9168386959 then 
+        waves_logic:Disconnect()
+        waves_logic = nil
+        return
+    end
+    local zombies_folder = game:GetService("Workspace").ServerZombies or nil
+
+    beginFrame()
+
+    local c_zombies = {}
+
+    for _, entry in ipairs(zombies_folder:GetChildren()) do
+        local head = entry:FindFirstChild("Head")
+        if not head then continue end
+        if entry.Humanoid.Health <= 1 then continue end
+        local screenPos, onScreen = cam:WorldToViewportPoint(head.Position)
+
+        --if onScreen and screenPos.Z > 0 then
+            table.insert(c_zombies, {
+                instance = entry,
+                distance = getDistance(head.CFrame),
+                screenPos = screenPos,
+                onscreen = onScreen and screenPos.Z > 0
+            })
+        --end
+    end
+
+    if #c_zombies == 0 then return end
+
+    table.sort(c_zombies, function(a, b)
+        return a.distance < b.distance
+    end)
+
+    zombies = c_zombies
+
+    --misc 
+    for _, zombie in ipairs(zombies) do
+        if zombie.onscreen then
+            local topLeft, topRight, bottomRight, bottomLeft = getBoundingBox(zombie.instance:GetPivot(), zombie.instance:GetExtentsSize())
+
+            if topLeft or topRight or bottomRight or bottomLeft then
+                if waves_visuals_box_bool then 
+                    drawBox(topLeft, topRight, bottomRight, bottomLeft, waves_visuals_box_color)
+                end
+
+                if waves_visuals_distance_bool then
+                    drawText(bottomLeft, tostring(zombie.distance / 10) .. "m", white)
+                end
+            end
+
+            if waves_visuals_health_bool then
+                zombie.instance.Humanoid.HealthDisplayDistance = 99999
+            end
+        
+            if waves_visuals_name_bool then 
+                zombie.instance.Humanoid.NameDisplayDistance = 99999
+            end
+
+        end
+
+
+        if waves_main_freeze_bool and zombie.distance / 10 < waves_main_freeze_distance then
+            zombie.instance.Humanoid.Sit = true
+            zombie.instance.Humanoid.PlatformStand = true
+        
+        else
+            zombie.instance.Humanoid.Sit = false
+            zombie.instance.Humanoid.PlatformStand = false
+        end
+
+        
+
+    end
+
+
+    local target = zombies[1]
+    local head = target.instance:FindFirstChild("Head") or target.instance:FindFirstChild("HumanoidRoothead")
+    local topLeft, topRight, bottomRight, bottomLeft = getBoundingBox(head.CFrame, head.Size)
+    if waves_aimbot_bool and (waves_aimbot_hotkey == nil or waves_aimbot_HotkeyState) then
+        if true  and target.distance / 10 < waves_aimbot_distance then --autoshoot
+            cam.CFrame = CFrame.lookAt(cam.CFrame.Position, head.Position)
+            mouse1click()
+            if waves_aimbot_reloadspam then
+                keypress(0x52)--R
+                keyrelease(0x52)--R
+            end
+        end
+    end
+
+    if topLeft or topRight or bottomRight or bottomLeft then 
+        if waves_aimbot_debug_bool then
+            drawBox(topLeft, topRight, bottomRight, bottomLeft)
+        end
+    end
+
+
+    
+    endFrame()
+end)
+
+
+local stepforiq_i = 0
+local stepforiq_DuelGui = nil
+local stepforiq_HauptBalken = nil
+local stepforiq_GreenBar = nil
+local stepforiq_RedBar = nil
+local stepforiq_Remotes = nil
+local stepforiq_DuelStart = nil
+local stepforiq_DuelEnd = nil
+local stepforiq_DuelAnimSync = nil
+local stepforiq_hrp = nil
+local stepforiq_DuelStartConnection = nil
+
+if game.GameId == 9833771859 then
+    stepforiq_DuelGui = playerGui:WaitForChild("IQDuelScreenGui")
+    stepforiq_HauptBalken = stepforiq_DuelGui:WaitForChild("HauptBalkenFrame")
+    stepforiq_GreenBar = stepforiq_HauptBalken:WaitForChild("GreenBalkenMEFrame")
+    stepforiq_RedBar = stepforiq_HauptBalken:WaitForChild("RedBalkenGegnerFrame")
+    stepforiq_Remotes = rs:WaitForChild("RemoteEvents")
+    stepforiq_DuelStart = stepforiq_Remotes:WaitForChild("DuelStart")
+    stepforiq_DuelEnd = stepforiq_Remotes:WaitForChild("DuelEnd")
+    stepforiq_DuelAnimSync = stepforiq_Remotes:WaitForChild("DuelAnimSync")
+    stepforiq_hrp = character and character:FindFirstChild("HumanoidRootPart")
+end
+
+stepforiq_logic = RunService.Heartbeat:Connect(function()
+    if game.GameId ~= 9833771859 then 
+        stepforiq_logic:Disconnect()
+        stepforiq_logic = nil
+        return
+    end
+
+    if stepforiq_main_spamstep_bool then
+        local stepRemote = rs.RemoteEvents.StepTaken
+        stepRemote:FireServer()
+    end
+
+
+    if stepforiq_main_autowin_bool then
+        local remotegetdoor = rs.RemoteEvents.GetCurrentDoor
+
+        stepforiq_i += 1
+
+        if stepforiq_i > 150 then
+            -- get current door
+            local success, door = pcall(function()
+                return remotegetdoor:InvokeServer()
+            end)
+
+            local model = nil
+
+            -- try next door
+            if success and typeof(door) == "number" then
+                model = workspace:FindFirstChild("WinModel" .. (door + 1))
+            end
+
+            -- fallback → highest WinModel
+            if not model then
+                local highest = 0
+
+                for _, v in ipairs(workspace:GetChildren()) do
+                    local num = tonumber(v.Name:match("^WinModel(%d+)$"))
+                    if num and num > highest then
+                    highest = num
+                        model = v
+                    end
+                end
+            end
+
+            -- teleport
+            if model and model:FindFirstChild("WinPart") then
+                local part = model.WinPart
+
+                stepforiq_hrp.CFrame = part.CFrame + Vector3.new(0, 3, 0)
+                stepforiq_hrp.Velocity = Vector3.new(0, -50, 0)
+            end
+
+            stepforiq_i = 0
+        end
+    end
+
+end)
+
+local function CleanupDuel()
+    cam.CameraType = Enum.CameraType.Custom
+    if character and character:FindFirstChild("Humanoid") then
+        cam.CameraSubject = character.Humanoid
+    end
+    stepforiq_DuelGui.Enabled = false
+    stepforiq_HauptBalken.Visible = false
+    for _, v in ipairs(playerGui:GetChildren()) do
+        if v:IsA("ScreenGui") and v ~= stepforiq_DuelGui then
+            v.Enabled = true
+        end
+    end
+end
+
+local function AutoWinDuel(data)
+    task.wait(0.1)
+    stepforiq_DuelGui.Enabled = true
+    stepforiq_HauptBalken.Visible = true
+    stepforiq_GreenBar.Size = UDim2.new(1, 0, 1, 0)
+    stepforiq_RedBar.Size = UDim2.new(0, 0, 1, 0)
+    stepforiq_DuelAnimSync:FireServer("minigame_start")
+    task.wait(0.1)
+    stepforiq_DuelEnd:FireServer(true, data.enemyIndex)
+    task.wait(0.1)
+    CleanupDuel()
+end
+
+if game.GameId == 9833771859 and stepforiq_DuelStart then
+    stepforiq_DuelStartConnection = stepforiq_DuelStart.OnClientEvent:Connect(function(data)
+        if stepforiq_main_Duelautowin_bool then
+            AutoWinDuel(data)
+        end
+    end)
+end
+
+
+-- plants vs brainrots
+local function parseMoneypvb(str)
+    -- remove $
+    str = str:gsub("%$", ""):gsub(",", ""):lower()
+
+    -- get number and suffix
+    local num, suffix = str:match("([%d%.]+)(%a?)")
+    num = tonumber(num)
+
+    local multipliers = {
+        k = 1e3,
+        m = 1e6,
+        b = 1e9,
+        t = 1e12
+    }
+
+    if suffix and multipliers[suffix] then
+        num = num * multipliers[suffix]
+    end
+
+    return num
+end
+
+local plantsvsbrainrots_autoequip_timer = 0
+local fallback_plantsvsbrainrots_main_autoequip_bool = nil
+local plantsvsbrainrots_logic = nil
+local plantsvsbrainrots_autobuy_timer = 0
+local plantsvsbrainrots_scrollingframe = nil
+local plantsvsbrainrots_autosell_delay_timer = 0
+local plantsvsbrainrots_autosell_delayreset_timer = 0
+local plantsvsbrainrots_backpack_delay_timer = 0
+local plantsvsbrainrots_backpackCurrent = 0
+local plantsvsbrainrots_c_backpackCurrent = 0
+plantsvsbrainrots_autosell_once = false
+plantsvsbrainrots_logic = RunService.Heartbeat:Connect(function()
+    if game.GameId ~= 8316902627 then 
+        plantsvsbrainrots_logic:Disconnect()
+        plantsvsbrainrots_logic = nil
+        return
+    end
+
+    if not plantsvsbrainrots_scrollingframe then plantsvsbrainrots_scrollingframe = playerGui.Main.Seeds.Frame.ScrollingFrame end
+
+    local RateLimiter = require(game:GetService("ReplicatedStorage").Modules.Data.ReplicaService.RateLimiter)
+    local mt = getmetatable(RateLimiter.Default)
+    mt.CheckRate = function() return true end
+
+    if plantsvsbrainrots_main_autoequip_bool then
+        if plantsvsbrainrots_autoequip_timer == 0 then
+            plantsvsbrainrots_autoequip_timer = os.clock()
+            rs.Remotes.EquipBestBrainrots:FireServer()
+        elseif tonumber(plantsvsbrainrots_main_autoequip_delay) + plantsvsbrainrots_autoequip_timer < os.clock() then
+            plantsvsbrainrots_autoequip_timer = 0
+        end
+    end
+
+    if plantsvsbrainrots_main_autobuy_bool then ----------------------------------------------------------------------------------------------------------- add pricecheck later  playerGui.Main.Seeds.Frame.ScrollingFrame["Brussel Sprouts Seed"].Buttons.Buy.TextLabel.Text
+        if plantsvsbrainrots_autobuy_timer == 0 or os.clock() - plantsvsbrainrots_autobuy_timer >= 1 then
+            plantsvsbrainrots_autobuy_timer = os.clock()
+
+            local bought = false
+
+            --Plants  game:GetService("Players").RisikCFW1.leaderstats.Money
+            for _, button in ipairs(plantsvsbrainrots_scrollingframe:GetChildren()) do
+                if not button:IsA("Frame") then continue end
+                if not button:FindFirstChild("Buttons") then continue end
+                if not button.Buttons:FindFirstChild("Buy") then continue end
+                if button.Buttons.Buy.TextButton.ImageColor3 ~= Color3.fromRGB(0, 255, 17) then continue end
+                if parseMoneypvb(button.Buttons.Buy.TextLabel.Text) > player.leaderstats.Money.Value then continue end
+                rs.Remotes.BuyItem:FireServer(button.Name, true)
+                bought = true
+                break
+            end
+
+            --gear
+            if not bought then
+                local gearFrame = game:GetService("Players").LocalPlayer.PlayerGui.Main.Gears.Frame.ScrollingFrame
+
+                for _, button in ipairs(gearFrame:GetChildren()) do
+                    if not button:IsA("Frame") then continue end
+                    if not button:FindFirstChild("Buttons") then continue end
+                    if not button.Buttons:FindFirstChild("Buy") then continue end
+                    if button.Buttons.Buy.TextButton.ImageColor3 ~= Color3.fromRGB(0, 255, 17) then continue end
+                    if parseMoneypvb(button.Buttons.Buy.TextLabel.Text) > player.leaderstats.Money.Value then continue end
+                    rs.Remotes.BuyGear:FireServer(button.Name, true)
+                    break
+                end
+            end
+        end
+    end
+
+    --update backpack
+    local backpackMax = 250
+    if plantsvsbrainrots_backpack_delay_timer == 0 then
+        plantsvsbrainrots_backpack_delay_timer = os.clock()
+    elseif plantsvsbrainrots_backpack_delay_timer + 20 < os.clock() then
+        plantsvsbrainrots_c_backpackCurrent = 0
+        for _ in ipairs(player.Backpack:GetChildren()) do
+            plantsvsbrainrots_c_backpackCurrent += 1
+        end
+        plantsvsbrainrots_backpackCurrent = plantsvsbrainrots_c_backpackCurrent
+        plantsvsbrainrots_backpack_delay_timer = 0
+    end
+
+    -- autosell    
+    if plantsvsbrainrots_main_autosell_bool then
+        if plantsvsbrainrots_backpackCurrent == 0 then return end
+        if plantsvsbrainrots_backpackCurrent > backpackMax - 25 then
+            if not plantsvsbrainrots_autosell_once and (plantsvsbrainrots_autosell_delayreset_timer == 0 or plantsvsbrainrots_autosell_delayreset_timer + 10 < os.clock()) then
+                fallback_plantsvsbrainrots_main_autoequip_bool = plantsvsbrainrots_main_autoequip_bool
+                plantsvsbrainrots_autosell_delay_timer = os.clock()
+                plantsvsbrainrots_main_autoequip_bool = true
+                plantsvsbrainrots_autoequip_timer = 0
+                plantsvsbrainrots_autosell_once = true
+                plantsvsbrainrots_autosell_delayreset_timer = 0
+            end
+            if plantsvsbrainrots_autosell_once and plantsvsbrainrots_autosell_delay_timer + 10 < os.clock() then 
+                -- todo: favorite top 30 brainrots or so before selling
+                rs.Remotes.ItemSell:FireServer()
+                rs.Remotes.ConfirmSell:FireServer(table.unpack({ -- todo: most likley not perfekt couldent find the button in playergui for some reson else just click the button
+                    [1] = "Brainrot",
+                    [2] = "Limited",
+                    [3] = true,
+                    [4] = true,
+                }))
+                plantsvsbrainrots_main_autoequip_bool = fallback_plantsvsbrainrots_main_autoequip_bool
+                fallback_plantsvsbrainrots_main_autoequip_bool = nil
+                plantsvsbrainrots_autosell_delay_timer = 0
+                plantsvsbrainrots_autosell_delayreset_timer = os.clock()
+                plantsvsbrainrots_autosell_once = false
+            end
+        end
+    end
+end)
+
+
+
+--gag
+local suffixes = {
+    K = 1e3,
+    M = 1e6,
+    B = 1e9,
+    T = 1e12,
+    QA = 1e15,
+    QI = 1e18,
+    SX = 1e21
+}
+local function parseShecklesgag(text)
+    if not text or text == "" then return 0 end
+
+    -- remove spaces and currency symbol if exists
+    text = text:gsub("[,%s¢]", "")
+
+    -- find number + suffix
+    local number, suffix = text:match("([%d%.]+)(%a*)")
+
+    number = tonumber(number)
+    if not number then return 0 end
+
+    if suffix ~= "" then
+        suffix = suffix:upper()
+        local multiplier = suffixes[suffix]
+        if multiplier then
+            return number * multiplier
+        end
+    end
+
+    return number
+end
+
+local gag_logic = nil
+local gag_shop_autosell_delay_timer = 0
+local gag_shop_autosell_oldpos = nil
+local gag_shop_autobuy_timer = 0
+gag_logic = RunService.Heartbeat:Connect(function()
+    if game.GameId ~= 7436755782 then 
+        gag_logic:Disconnect()
+        gag_logic = nil
+        return
+    end
+    
+    local sheckles = parseShecklesgag(player.leaderstats.Sheckles.Value)    
+
+    if gag_shop_autosell_bool then
+        if gag_shop_autosell_delay_timer == 0 then
+            gag_shop_autosell_delay_timer = os.clock()
+        elseif gag_shop_autosell_delay_timer + gag_shop_autosell_delay < os.clock() then
+            if gag_shop_autosell_oldpos == nil then
+                gag_shop_autosell_oldpos = character.HumanoidRootPart.CFrame
+                character.HumanoidRootPart.CFrame = ws.NPCS.Steven.HumanoidRootPart.CFrame
+            end
+            if gag_shop_autosell_delay_timer + gag_shop_autosell_delay + 0.2 < os.clock() then
+                rs.GameEvents.Sell_Inventory:FireServer()
+            end
+            if gag_shop_autosell_delay_timer + gag_shop_autosell_delay + 0.5 < os.clock() then
+                character.HumanoidRootPart.CFrame = gag_shop_autosell_oldpos
+                gag_shop_autosell_oldpos = nil
+                gag_shop_autosell_delay_timer = 0
+            end
+        end
+    end
+
+    if gag_shop_autobuy_bool then
+        if gag_shop_autobuy_timer == 0 then
+            gag_shop_autobuy_timer = os.clock()
+        end
+        if not gag_shop_autobuy_timer + 1 < os.clock() then return end
+
+        for _, entry in ipairs(playerGui.Seed_Shop.Frame.ScrollingFrame:GetChildren()) do
+            if not entry:FindFirstChild("Main_Frame") then continue end
+            local instock = entry.Frame.Sheckles_Buy.In_Stock.Visible
+            local cost = parseShecklesgag(entry.Frame.Sheckles_Buy.In_Stock.Cost_Text.Text)
+            local affordable = cost <= sheckles
+            if not instock or not affordable then continue end
+            if not isStringInList(entry.Name, gag_shop_autobuy_seeds) then continue end
+            rs.GameEvents.BuySeedStock:FireServer(table.unpack({[1] = "Shop", [2] = entry.Name,}))
+            
+        end
+        gag_shop_autobuy_timer = 0
+    end
+
+
+end)
+
+
+
+
+
+--Input Manager
+local toggleConnection = UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+
+    if input.KeyCode == Enum.KeyCode.Home then
+        frame.Visible = not frame.Visible
+    end
+
+
+    if general_main_noclip_hotkey and input.KeyCode == general_main_noclip_hotkey then
+        noclipHotkeyState = not noclipHotkeyState
+    end
+
+    if general_main_speed_hotkey and input.KeyCode == general_main_speed_hotkey then
+        general_main_speed_HotkeyState = not general_main_speed_HotkeyState
+    end
+
+    if general_main_jumpheight_hotkey and input.KeyCode == general_main_jumpheight_hotkey then
+        general_main_jumpheight_HotkeyState = not general_main_jumpheight_HotkeyState
+    end
+
+    if general_main_autoclicker_hotkey and input.KeyCode == general_main_autoclicker_hotkey then
+        general_main_autoclicker_HotkeyState = not general_main_autoclicker_HotkeyState
+    end
+
+    if general_aimbot_hotkey and input.KeyCode == general_aimbot_hotkey then
+        general_aimbot_HotkeyState = not general_aimbot_HotkeyState
+    end
+    
+    if waves_aimbot_hotkey and input.KeyCode == waves_aimbot_hotkey then
+        waves_aimbot_HotkeyState = not waves_aimbot_HotkeyState
+    end
+
+end) 
+
+local toggleEndConnection = UserInputService.InputEnded:Connect(function(input)
+    if general_main_noclip_hotkey and input.KeyCode == general_main_noclip_hotkey then
+        if general_main_noclip_hotkey_hold.hold then
+            noclipHotkeyState = false
+        end
+    end
+
+    if general_main_speed_hotkey and input.KeyCode == general_main_speed_hotkey then
+        if general_main_speed_hotkey_hold.hold then
+            general_main_speed_HotkeyState = false
+        end
+    end
+
+    if general_main_jumpheight_hotkey and input.KeyCode == general_main_jumpheight_hotkey then
+        if general_main_jumpheight_hotkey_hold.hold then
+            general_main_jumpheight_HotkeyState = false
+        end
+    end
+
+    if general_main_autoclicker_hotkey and input.KeyCode == general_main_autoclicker_hotkey then
+        if general_main_autoclicker_hotkey_hold.hold then
+            general_main_autoclicker_HotkeyState = false
+        end
+    end
+
+    if general_aimbot_hotkey and input.KeyCode == general_aimbot_hotkey then
+        if general_aimbot_hotkey_hold.hold then
+            general_aimbot_HotkeyState = false
+        end
+    end
+
+    if waves_aimbot_hotkey and input.KeyCode == waves_aimbot_hotkey then
+        if waves_aimbot_hotkey_hold.hold then
+            waves_aimbot_HotkeyState = false
+        end
+    end
+end)
+
+closeButton.MouseButton1Click:Connect(function()
+    toggleConnection:Disconnect()
+    toggleEndConnection:Disconnect()
+
+    if generallogic then
+        generallogic:Disconnect()
+        generallogic = nil
+    end
+
+    if waves_logic then
+        waves_logic:Disconnect()
+        waves_logic = nil
+    end
+
+    if stepforiq_logic then
+        stepforiq_logic:Disconnect()
+        stepforiq_logic = nil
+    end
+
+    if stepforiq_DuelStartConnection then
+        stepforiq_DuelStartConnection:Disconnect()
+        stepforiq_DuelStartConnection = nil
+    end
+
+    if plantsvsbrainrots_logic then
+        plantsvsbrainrots_logic:Disconnect()
+        plantsvsbrainrots_logic = nil
+    end
+
+    if gag_logic then
+        gag_logic:Disconnect()
+        gag_logic = nil
+    end
+
+    clearDrawings()
+    gui:Destroy()
+end)
