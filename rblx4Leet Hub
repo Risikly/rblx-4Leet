@@ -1902,7 +1902,7 @@ gag_logic = RunService.Heartbeat:Connect(function()
         if gag_shop_autobuy_timer == 0 then
             gag_shop_autobuy_timer = os.clock()
         end
-        if not gag_shop_autobuy_timer + 1 < os.clock() then return end
+        if gag_shop_autobuy_timer + 1 > os.clock() then return end
 
         for _, entry in ipairs(playerGui.Seed_Shop.Frame.ScrollingFrame:GetChildren()) do
             if not entry:FindFirstChild("Main_Frame") then continue end
@@ -1912,7 +1912,7 @@ gag_logic = RunService.Heartbeat:Connect(function()
             if not instock or not affordable then continue end
             if not isStringInList(entry.Name, gag_shop_autobuy_seeds) then continue end
             rs.GameEvents.BuySeedStock:FireServer(table.unpack({[1] = "Shop", [2] = entry.Name,}))
-            
+
         end
         gag_shop_autobuy_timer = 0
     end
