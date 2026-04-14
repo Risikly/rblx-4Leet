@@ -106,11 +106,20 @@ local plantsvsbrainrots_main_autobuy_bool = false
 local plantsvsbrainrots_main_autosell_bool = false
 
 --gag
-local gag_shop_autosell_bool = false
-local gag_shop_autosell_delay = 100
-local gag_shop_autobuy_bool = false
-local gag_shop_autobuy_seeds = {}
+local gag_vars = {
+    gag_shop_autosell_bool = false,
+    gag_shop_autosell_delay = 100,
+    gag_shop_autobuy_bool = false,
+    gag_shop_autobuy_seeds = {},
+    gag_shop_autobuy_gear = {},
+    gag_shop_autobuy_eggs = {}
+}
+
+
 local gag_shop_seeds_all = {}
+local gag_shop_gear_all = {}
+local gag_shop_eggs_all = {}
+
 
 
 
@@ -907,13 +916,29 @@ local function hotkey(parent, text, default_key, ishold, i_ypos, callback, ignor
 end
 
 
---gamespecific pre ui
+--gamespecific pre ui                                   
 if game.GameId == 7436755782 then 
     for _, entry in ipairs(playerGui.Seed_Shop.Frame.ScrollingFrame:GetChildren()) do
         if entry:FindFirstChild("Main_Frame") then
             table.insert(gag_shop_seeds_all, entry.Name)
         end
     end
+
+    for _, entry in ipairs(playerGui.Gear_Shop.Frame.ScrollingFrame:GetChildren()) do
+        if entry:FindFirstChild("Main_Frame") then
+            table.insert(gag_shop_gear_all, entry.Name)
+        end
+    end
+
+    for _, entry in ipairs(playerGui.PetShop_UI.Frame.ScrollingFrame:GetChildren()) do
+        if entry:FindFirstChild("Main_Frame") then
+            table.insert(gag_shop_eggs_all, entry.Name)
+        end
+    end
+
+    gag_vars.gag_shop_autobuy_seeds = gag_shop_seeds_all
+    gag_vars.gag_shop_autobuy_gear = gag_shop_gear_all
+    gag_vars.gag_shop_autobuy_eggs = gag_shop_eggs_all
 end
 
 --general
@@ -1154,24 +1179,35 @@ end)
 --gag
 local gag_shop_a_i = 0
 local gag_shop_b_i = 0
-checkbox(gag_shop_a, "Auto sell", gag_shop_autosell_bool, gag_shop_a_i, function(state)
-    gag_shop_autosell_bool = state
+checkbox(gag_shop_a, "Auto sell", gag_vars.gag_shop_autosell_bool, gag_shop_a_i, function(state)
+    gag_vars.gag_shop_autosell_bool = state
 end)
 
 gag_shop_a_i += 1
-slider(gag_shop_a, "Auto sell delay", 10, 1000, gag_shop_autosell_delay, gag_shop_a_i, function(state)
-    gag_shop_autosell_delay = state
+slider(gag_shop_a, "Auto sell delay", 10, 1000, gag_vars.gag_shop_autosell_delay, gag_shop_a_i, function(state)
+    gag_vars.gag_shop_autosell_delay = state
 end)
 
 gag_shop_a_i += 1
-checkbox(gag_shop_a, "Auto buy", gag_shop_autobuy_bool, gag_shop_a_i, function(state)
-    gag_shop_autobuy_bool = state
+checkbox(gag_shop_a, "Auto buy", gag_vars.gag_shop_autobuy_bool, gag_shop_a_i, function(state)
+    gag_vars.gag_shop_autobuy_bool = state
 end)
 
 gag_shop_a_i += 1
-multiselectbox(gag_shop_a, "Autobuy seeds", gag_shop_seeds_all, gag_shop_autobuy_seeds, gag_shop_a_i, function(values)
-    gag_shop_autobuy_seeds = values
+multiselectbox(gag_shop_a, "Autobuy seeds", gag_shop_seeds_all, gag_vars.gag_shop_autobuy_seeds, gag_shop_a_i, function(values)
+    gag_vars.gag_shop_autobuy_seeds = values
 end)
+
+gag_shop_a_i += 1
+multiselectbox(gag_shop_a, "Autobuy gear", gag_shop_gear_all, gag_vars.gag_shop_autobuy_gear, gag_shop_a_i, function(values)
+    gag_vars.gag_shop_autobuy_gear = values
+end)
+
+gag_shop_a_i += 1
+multiselectbox(gag_shop_a, "Autobuy eggs", gag_shop_eggs_all, gag_vars.gag_shop_autobuy_eggs, gag_shop_a_i, function(values)
+    gag_vars.gag_shop_autobuy_eggs = values
+end)
+
 
 
 --cheat lib
@@ -1877,20 +1913,20 @@ gag_logic = RunService.Heartbeat:Connect(function()
         return
     end
     
-    local sheckles = parseShecklesgag(player.leaderstats.Sheckles.Value)    
+    local sheckles = parseShecklesgag(player.leaderstats.Sheckles.Value)
 
-    if gag_shop_autosell_bool then
+    if gag_vars.gag_shop_autosell_bool then
         if gag_shop_autosell_delay_timer == 0 then
             gag_shop_autosell_delay_timer = os.clock()
-        elseif gag_shop_autosell_delay_timer + gag_shop_autosell_delay < os.clock() then
+        elseif gag_shop_autosell_delay_timer + gag_vars.gag_shop_autosell_delay < os.clock() then
             if gag_shop_autosell_oldpos == nil then
                 gag_shop_autosell_oldpos = character.HumanoidRootPart.CFrame
                 character.HumanoidRootPart.CFrame = ws.NPCS.Steven.HumanoidRootPart.CFrame
             end
-            if gag_shop_autosell_delay_timer + gag_shop_autosell_delay + 0.2 < os.clock() then
+            if gag_shop_autosell_delay_timer + gag_vars.gag_shop_autosell_delay + 0.2 < os.clock() then
                 rs.GameEvents.Sell_Inventory:FireServer()
             end
-            if gag_shop_autosell_delay_timer + gag_shop_autosell_delay + 0.5 < os.clock() then
+            if gag_shop_autosell_delay_timer + gag_vars.gag_shop_autosell_delay + 0.5 < os.clock() then
                 character.HumanoidRootPart.CFrame = gag_shop_autosell_oldpos
                 gag_shop_autosell_oldpos = nil
                 gag_shop_autosell_delay_timer = 0
@@ -1898,22 +1934,77 @@ gag_logic = RunService.Heartbeat:Connect(function()
         end
     end
 
-    if gag_shop_autobuy_bool then
+    if gag_vars.gag_shop_autobuy_bool then
         if gag_shop_autobuy_timer == 0 then
             gag_shop_autobuy_timer = os.clock()
         end
-        if gag_shop_autobuy_timer + 1 > os.clock() then return end
+        if gag_shop_autobuy_timer + 0.1 > os.clock() then return end
 
+        --seedshop
         for _, entry in ipairs(playerGui.Seed_Shop.Frame.ScrollingFrame:GetChildren()) do
             if not entry:FindFirstChild("Main_Frame") then continue end
+            if not isStringInList(entry.Name, gag_vars.gag_shop_autobuy_seeds) then continue end
             local instock = entry.Frame.Sheckles_Buy.In_Stock.Visible
-            local cost = parseShecklesgag(entry.Frame.Sheckles_Buy.In_Stock.Cost_Text.Text)
-            local affordable = cost <= sheckles
+            local cost = parseShecklesgag(entry.Frame.Sheckles_Buy.In_Stock.Cost_Text.TEXT.Text)
+            local affordable = cost <= parseShecklesgag(player.leaderstats.Sheckles.Value)
             if not instock or not affordable then continue end
-            if not isStringInList(entry.Name, gag_shop_autobuy_seeds) then continue end
+            print("Buying " .. entry.Name .. " for " .. cost .. " sheckles")
             rs.GameEvents.BuySeedStock:FireServer(table.unpack({[1] = "Shop", [2] = entry.Name,}))
-
+            gag_shop_autobuy_timer = 0
         end
+
+        --daily big
+        for _, entry in ipairs(playerGui.Seed_Shop.Daily.ScrollingFrame:GetChildren()) do
+            if not entry:FindFirstChild("Details") then continue end
+            if not isStringInList(entry.Name, gag_vars.gag_shop_autobuy_seeds) then continue end
+            local instock = entry._StockValue.Value
+            local cost = parseShecklesgag(entry.PurchaseButton.Main.Price.Text)
+            local affordable = cost <= parseShecklesgag(player.leaderstats.Sheckles.Value)
+            if instock == 0 or not affordable then continue end
+            print("Buying " .. entry.Name .. " for " .. cost .. " sheckles")
+            rs.GameEvents.BuyDailySeedShopStock:FireServer(entry.Name)
+            gag_shop_autobuy_timer = 0
+        end
+
+        --Daily small
+        for _, entry in ipairs(playerGui.Seed_Shop.Daily.ScrollingFrame.Seeds:GetChildren()) do
+            if not entry:FindFirstChild("Details") then continue end
+            if not isStringInList(entry.Name, gag_vars.gag_shop_autobuy_seeds) then continue end
+            local instock = entry._StockValue.Value
+            local cost = parseShecklesgag(entry.PurchaseButton.Main.Price.Text)
+            local affordable = cost <= parseShecklesgag(player.leaderstats.Sheckles.Value)
+            if instock == 0 or not affordable then continue end
+            print("Buying " .. entry.Name .. " for " .. cost .. " sheckles")
+            rs.GameEvents.BuyDailySeedShopStock:FireServer(entry.Name)
+            gag_shop_autobuy_timer = 0
+        end
+
+        --gear
+        for _, entry in ipairs(playerGui.Gear_Shop.Frame.ScrollingFrame:GetChildren()) do --game:GetService("Players").RisikCFW1.PlayerGui.Gear_Shop.Frame.ScrollingFrame["Basic Sprinkler"].Frame.Sheckles_Buy.In_Stock.Cost_Text
+            if not entry:FindFirstChild("Main_Frame") then continue end
+            if not isStringInList(entry.Name, gag_vars.gag_shop_autobuy_gear) then continue end
+            local instock = entry.Frame.Value.Value
+            local cost = parseShecklesgag(entry.Frame.Sheckles_Buy.In_Stock.Cost_Text.Text)
+            local affordable = cost <= parseShecklesgag(player.leaderstats.Sheckles.Value)
+            if instock == 0 or not affordable then continue end
+            print("Buying " .. entry.Name .. " for " .. cost .. " sheckles")
+            rs.GameEvents.BuyGearStock:FireServer(entry.Name)
+            gag_shop_autobuy_timer = 0
+        end
+
+        --eggs
+        for _, entry in ipairs(playerGui.PetShop_UI.Frame.ScrollingFrame:GetChildren()) do
+            if not entry:FindFirstChild("Main_Frame") then continue end
+            if not isStringInList(entry.Name, gag_vars.gag_shop_autobuy_eggs) then continue end
+            local instock = entry.Frame.Value.Value
+            local cost = parseShecklesgag(entry.Frame.Sheckles_Buy.In_Stock.Cost_Text.TEXT.Text)
+            local affordable = cost <= parseShecklesgag(player.leaderstats.Sheckles.Value)
+            if instock == 0 or not affordable then continue end
+            print("Buying " .. entry.Name .. " for " .. cost .. " sheckles")
+            rs.GameEvents.BuyPetEgg:FireServer(entry.Name)
+            gag_shop_autobuy_timer = 0
+        end
+
         gag_shop_autobuy_timer = 0
     end
 
